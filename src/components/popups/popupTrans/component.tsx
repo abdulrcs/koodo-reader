@@ -17,29 +17,22 @@ class PopupTrans extends React.Component<PopupTransProps, PopupTransState> {
     let originalText = this.props.originalText.replace(/(\r\n|\n|\r)/gm, "");
     this.handleTrans(originalText);
   }
-  handleTrans = (text: string) => {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = `https://fanyi-api.baidu.com/api/trans/vip/translate?q=${text}&from=auto&to=${
-      StorageUtil.getReaderConfig("transTarget") || "auto"
-    }&appid=20200802000531425&salt=1435660288&sign=${md5(
-      // eslint-disable-next-line
-      "20200802000531425" + text + "1435660288" + "sJRHTorJq8j8_ru2GkHl"
-    )}&callback=handleCallback`;
-    document.head.appendChild(script);
-    (window as any).handleCallback = (res: any) => {
-      if (res.error_code && res.error_code === 54003) {
-        this.setState({
-          translatedText: this.props.t("Reach frequency limit"),
-        });
-      } else {
-        this.setState({
-          translatedText: res.trans_result
-            ? res.trans_result[0].dst
-            : this.props.t("Error happens"),
-        });
-      }
-    };
+  handleTrans = async (text: string) => {
+    let data = await fetch(`https://amm-api-translate.herokuapp.com/translate?engine=google&text=${text}&to=${StorageUtil.getReaderConfig("transTarget") || "auto"}`).then(
+      (res: any) => res.json()).then(
+        (res: any) => res.data.result
+      ).catch(res => {
+        if (res.error_code && res.error_code === 54003) {
+          this.setState({
+            translatedText: this.props.t("Reach frequency limit"),
+          });
+        }
+      })
+      this.setState({
+        translatedText: data
+          ? data
+          : this.props.t("Error happens"),
+      });
   };
   render() {
     const renderNoteEditor = () => {
